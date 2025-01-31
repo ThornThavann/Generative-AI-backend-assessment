@@ -11,6 +11,9 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerOptions from './swagger';
 import chat from './src/routes/chat'
 import cors from "cors";
+import Certificate from "./src/routes/certificate"
+import { rateLimit } from 'express-rate-limit'
+
 
 
 // Middleware setup
@@ -20,6 +23,17 @@ var corsOptions = {
   origin: "*",
 };
 
+const limiter = rateLimit({
+  windowMs: 2 * 60 * 1000, // 15 minutes
+  limit: 200, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
+  standardHeaders: 'draft-8', // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
+  // store: ... , // Redis, Memcached, etc. See below.
+  message:""
+})
+
+// Apply the rate limiting middleware to all requests.
+app.use(limiter)
 app.use(cors(corsOptions));
 
 // Swagger setup
@@ -27,8 +41,10 @@ const swaggerSpec = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Routes setup
-app.use('/api/auth', auth)
+app.use('/api/auth', auth) 
 app.use('/api/chat', chat)
+app.use('/api/certificate', Certificate)
+
 
 
 // Start server
